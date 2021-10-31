@@ -312,7 +312,11 @@ spec:
   hosts:
     - iris
   http:
-    - route:
+    - match:
+      - headers:
+          x-version:
+            exact: developing
+      route:
         - destination:
             host: iris
             subset: svc
@@ -321,3 +325,8 @@ spec:
         host: iris
         subset: rf
       mirror_percent: 100
+    - match:
+      route:
+        - destination:
+            host: iris
+            subset: live-rf
