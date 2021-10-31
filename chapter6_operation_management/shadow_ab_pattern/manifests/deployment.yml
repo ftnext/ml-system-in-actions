@@ -292,6 +292,9 @@ spec:
     loadBalancer:
       simple: ROUND_ROBIN
   subsets:
+    - name: live-rf
+      labels:
+        version: live-rf
     - name: svc
       labels:
         version: svc
