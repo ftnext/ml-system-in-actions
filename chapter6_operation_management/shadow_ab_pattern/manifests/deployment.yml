@@ -130,6 +130,72 @@ spec:
           emptyDir: {}
 
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: live-iris-rf
+  namespace: shadow-ab
+  labels:
+    app: live-iris-rf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iris
+  template:
+    metadata:
+      labels:
+        app: iris
+        version: live-rf
+      annotations:
+        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/proxyCPU: "128m"
+        sidecar.istio.io/proxyMemory: "128Mi"
+        proxy.istio.io/config: "{'concurrency':'4'}"
+    spec:
+      containers:
+        - name: iris-rf
+          image: shibui/ml-system-in-actions:shadow_ab_pattern_api_0.0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: 500m
+              memory: "300Mi"
+            requests:
+              cpu: 500m
+              memory: "300Mi"
+          volumeMounts:
+            - name: workdir
+              mountPath: /workdir
+          env:
+            - name: MODEL_FILEPATH
+              value: "/workdir/iris_rf.onnx"
+            - name: WORKERS
+              value: "8"
+      initContainers:
+        - name: model-loader
+          image: shibui/ml-system-in-actions:shadow_ab_pattern_loader_0.0.1
+          imagePullPolicy: Always
+          command:
+            - python
+            - "-m"
+            - "src.main"
+            - "--gcs_bucket"
+            - "ml_system_model_repository"
+            - "--gcs_model_blob"
+            - "iris_rf.onnx"
+            - "--model_filepath"
+            - "/workdir/iris_rf.onnx"
+          volumeMounts:
+            - name: workdir
+              mountPath: /workdir
+      volumes:
+        - name: workdir
+          emptyDir: {}
+
+---
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
